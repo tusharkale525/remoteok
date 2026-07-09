@@ -1,35 +1,57 @@
 import type { NextConfig } from "next";
 
-// Loader path from @ideavo/webpack-tagger - use direct resolve to get the actual file
-const loaderPath = require.resolve('@ideavo/webpack-tagger');
-
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: '*.supabase.co',
       },
       {
-        protocol: 'http',
-        hostname: '**',
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com',
       },
     ],
   },
-  allowedDevOrigins: ['*.e2b.app', '*.ideavo.app', '*.ideavo.ai'],
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  turbopack: {
-    rules: {
-      "*.{jsx,tsx}": {
-        loaders: [loaderPath]
-      }
-    }
-  }
-} as NextConfig;
+  headers: async () => [
+    {
+      source: '/:path*',
+      headers: [
+        {
+          key: 'X-DNS-Prefetch-Control',
+          value: 'on',
+        },
+        {
+          key: 'X-Frame-Options',
+          value: 'SAMEORIGIN',
+        },
+        {
+          key: 'X-Content-Type-Options',
+          value: 'nosniff',
+        },
+        {
+          key: 'Referrer-Policy',
+          value: 'origin-when-cross-origin',
+        },
+        {
+          key: 'X-XSS-Protection',
+          value: '1; mode=block',
+        },
+        {
+          key: 'Permissions-Policy',
+          value: 'camera=(), microphone=(), geolocation=()',
+        },
+      ],
+    },
+  ],
+};
 
 export default nextConfig;

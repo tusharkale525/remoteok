@@ -1,0 +1,515 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  role          String    @default("CLIENT")
+  status        String    @default("PENDING")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+  bio           String?
+
+  accounts      Account[]
+  sessions      Session[]
+  profile       Profile?
+  messages      Message[]
+  notifications Notification[]
+  activities    ActivityLog[]
+  badges        UserBadge[]
+  earnings      Earning[]
+  resumes       Resume[]
+  documents     Document[]
+  embeddings    Embedding[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Profile {
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline            String?
+  summary            String?    @db.Text
+  hourlyRate          Decimal?   @db.Decimal(10, 2)
+  availability        String?
+  isAvailable         Boolean    @default(true)
+  yearsOfExperience   Int?
+  languages           String[]
+  linkedInUrl         String?
+  githubUrl           String?
+  figmaUrl            String?
+  country             String?
+  city                String?
+  completedOnboarding Boolean   @default(false)
+  rating              Decimal?   @db.Decimal(3, 2)
+  totalEarnings       Decimal    @default(0) @db.Decimal(12, 2)
+  projectCount        Int        @default(0)
+  referralCode        String     @unique @default(cuid())
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  skills        UserSkill[]
+  projects      Project[]    @relation("ClientProjects")
+  proposals     Proposal[]
+  experiences   Experience[]
+  educations    Education[]
+  certifications Certification[]
+  portfolio     PortfolioItem[]
+  reviewsReceived Review[]
+  earnings      Earning[]
+  savedJobs     SavedJob[]
+  aiSuggestions AISuggestion[]
+}
+
+model Skill {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  category  String?
+  createdAt DateTime @default(now())
+
+  users    UserSkill[]
+  projects ProjectSkill[]
+}
+
+model UserSkill {
+  id        String  @id @default(cuid())
+  profileId String
+  skillId   String
+  level     String  @default("INTERMEDIATE")
+  yearsExp  Int?
+  isPrimary Boolean  @default(false)
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  skill     Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, skillId])
+}
+
+model Experience {
+  id          String   @id @default(cuid())
+  profileId   String
+  title       String
+  company     String
+  location    String?
+  startDate   DateTime
+  endDate     DateTime?
+  isCurrent   Boolean  @default(false)
+  description String?  @db.Text
+  profile     Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model Education {
+  id          String   @id @default(cuid())
+  profileId   String
+  institution String
+  degree      String
+  field       String?
+  startDate   DateTime
+  endDate     DateTime?
+  isCurrent   Boolean  @default(false)
+  profile     Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model Certification {
+  id         String    @id @default(cuid())
+  profileId  String
+  name       String
+  issuer     String
+  issueDate  DateTime
+  expiryDate DateTime?
+  url        String?
+  profile    Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model Project {
+  id                String    @id @default(cuid())
+  title             String
+  description       String    @db.Text
+  status            String    @default("DRAFT")
+  budget            Decimal?   @db.Decimal(12, 2)
+  budgetType        String     @default("FIXED")
+  urgency           String     @default("MEDIUM")
+  visibility        String     @default("public")
+  clientId          String
+  client            Profile   @relation("ClientProjects", fields: [clientId], references: [id])
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deadline          DateTime?
+  aiExtractedSkills String[]
+
+  skills      ProjectSkill[]
+  proposals   Proposal[]
+  milestones  Milestone[]
+  contracts   Contract[]
+  attachments Attachment[]
+  reviews     Review[]
+  chatRoom    ChatRoom?
+  earnings    Earning[]
+}
+
+model ProjectSkill {
+  id         String  @id @default(cuid())
+  projectId  String
+  skillId    String
+  importance Int     @default(1)
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  skill      Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, skillId])
+}
+
+model Proposal {
+  id             String   @id @default(cuid())
+  coverLetter    String?  @db.Text
+  description    String   @db.Text
+  status         String   @default("DRAFT")
+  bidAmount      Decimal  @db.Decimal(12, 2)
+  bidType        String   @default("FIXED")
+  estimatedDays Int?
+  milestones    String?
+  aiGenerated   Boolean  @default(false)
+  aiMatchScore  Int?
+  projectId     String
+  freelancerId  String
+  freelancer    Profile  @relation(fields: [freelancerId], references: [id])
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  attachments Attachment[]
+}
+
+model Contract {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?  @db.Text
+  status        String   @default("DRAFT")
+  value         Decimal  @db.Decimal(12, 2)
+  startDate     DateTime?
+  endDate       DateTime?
+  signedAt      DateTime?
+  freelancerId  String
+  clientId      String
+  projectId     String?  @unique
+  contractType  String   @default("freelance")
+  terms         String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  project   Project?   @relation(fields: [projectId], references: [id])
+  milestones Milestone[]
+  payments  Payment[]
+}
+
+model Milestone {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  amount      Decimal  @db.Decimal(12, 2)
+  status      String   @default("DRAFT")
+  dueDate     DateTime?
+  submittedAt DateTime?
+  approvedAt  DateTime?
+  contractId  String
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  contract Contract  @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  payments Payment[]
+}
+
+model Attachment {
+  id         String   @id @default(cuid())
+  filename   String
+  url        String
+  mimeType   String?
+  size       Int?
+  projectId  String?
+  proposalId String?
+  createdAt  DateTime @default(now())
+
+  project  Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  proposal Proposal? @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  amount          Decimal  @db.Decimal(12, 2)
+  currency        String   @default("usd")
+  status          String   @default("PENDING")
+  stripePaymentId String?  @unique
+  contractId      String?
+  milestoneId     String?
+  userId          String
+  createdAt       DateTime @default(now())
+
+  contract  Contract?  @relation(fields: [contractId], references: [id])
+  milestone Milestone? @relation(fields: [milestoneId], references: [id])
+}
+
+model Earning {
+  id          String   @id @default(cuid())
+  amount      Decimal  @db.Decimal(12, 2)
+  currency    String   @default("usd")
+  type        String
+  description String?
+  userId      String
+  profileId   String
+  projectId   String?
+  netAmount   Decimal  @db.Decimal(12, 2)
+  createdAt   DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id])
+  profile Profile  @relation(fields: [profileId], references: [id])
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  content     String   @db.Text
+  type        String   @default("TEXT")
+  senderId    String
+  receiverId  String
+  projectId   String?
+  read        Boolean  @default(false)
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  sender User @relation(fields: [senderId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String
+  title     String
+  message   String   @db.Text
+  data      String?
+  read      Boolean  @default(false)
+  userId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ChatRoom {
+  id        String   @id @default(cuid())
+  projectId String?  @unique
+  isGroup   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project  Project?       @relation(fields: [projectId], references: [id])
+  members  ChatRoomMember[]
+  messages ChatMessage[]
+}
+
+model ChatRoomMember {
+  id         String   @id @default(cuid())
+  chatRoomId String
+  userId     String
+  role       String   @default("member")
+  joinedAt   DateTime @default(now())
+  lastReadAt DateTime?
+  chatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+
+  @@unique([chatRoomId, userId])
+}
+
+model ChatMessage {
+  id         String   @id @default(cuid())
+  chatRoomId String
+  senderId   String
+  content    String   @db.Text
+  type       String   @default("text")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  chatRoom ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+}
+
+model SavedJob {
+  id        String   @id @default(cuid())
+  userId    String
+  jobId     String
+  profileId String
+  createdAt DateTime @default(now())
+
+  profile Profile @relation(fields: [profileId], references: [id])
+  job     Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobId])
+}
+
+model Job {
+  id                String   @id @default(cuid())
+  title             String
+  description       String   @db.Text
+  requirements      String?  @db.Text
+  budgetMin         Decimal? @db.Decimal(12, 2)
+  budgetMax         Decimal? @db.Decimal(12, 2)
+  duration          String?
+  urgency           String   @default("MEDIUM")
+  status            String   @default("active")
+  clientId          String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  aiExtractedSkills String[]
+
+  savedBy SavedJob[]
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  rating      Int
+  comment     String?  @db.Text
+  reviewerId  String
+  revieweeId  String
+  projectId   String
+  createdAt   DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id])
+}
+
+model PortfolioItem {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  url         String?
+  imageUrl    String?
+  category    String?
+  tags        String[]
+  viewCount   Int      @default(0)
+  profileId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model Resume {
+  id         String   @id @default(cuid())
+  filename   String
+  url        String
+  userId     String
+  parsedData String?
+  summary    String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  name      String
+  type      String
+  url       String
+  size      Int?
+  userId    String
+  metadata  String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Embedding {
+  id        String   @id @default(cuid())
+  type      String
+  content   String   @db.Text
+  vector    String
+  userId    String?
+  jobId     String?
+  metadata  String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job  Job?  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
+
+model AISuggestion {
+  id         String   @id @default(cuid())
+  type       String
+  category   String
+  suggestion String   @db.Text
+  priority   Int      @default(1)
+  status     String   @default("pending")
+  profileId  String
+  createdAt  DateTime @default(now())
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model Badge {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String
+  icon        String
+  criteria    String
+  createdAt   DateTime @default(now())
+
+  users UserBadge[]
+}
+
+model UserBadge {
+  id       String   @id @default(cuid())
+  userId   String
+  badgeId  String
+  earnedAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge    Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String
+  metadata   String?
+  userId     String
+  projectId  String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

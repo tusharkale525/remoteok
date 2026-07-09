@@ -1,0 +1,37 @@
+{
+  "name": "Remoteok",
+  "short_name": "Remoteok",
+  "description": "AI-powered freelance marketplace. Find work that fits you, not jobs you must search for.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Find Work",
+      "url": "/find-work",
+      "description": "Browse available projects"
+    },
+    {
+      "name": "Dashboard",
+      "url": "/dashboard/freelancer",
+      "description": "View your dashboard"
+    }
+  ]
+}
