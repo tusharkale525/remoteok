@@ -431,7 +431,7 @@ export default function HomePage() {
                     ))}
                   </div>
                   <CardDescription className="text-base">
-                    "{testimonial.content}"
+                    &ldquo;{testimonial.content}&rdquo;
                   </CardDescription>
                 </CardHeader>
               </Card>

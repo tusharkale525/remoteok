@@ -1,11 +1,22 @@
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let openaiClient: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!openaiClient) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY environment variable is not set');
+    }
+    openaiClient = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openaiClient;
+}
 
 export async function generateCompletion(messages: { role: 'system' | 'user' | 'assistant'; content: string }[]) {
-  const response = await openai.chat.completions.create({
+  const client = getOpenAIClient();
+  const response = await client.chat.completions.create({
     model: 'gpt-4o',
     messages,
     temperature: 0.7,
@@ -16,7 +27,8 @@ export async function generateCompletion(messages: { role: 'system' | 'user' | '
 }
 
 export async function generateStructuredOutput<T>(schema: object, prompt: string): Promise<T> {
-  const response = await openai.chat.completions.create({
+  const client = getOpenAIClient();
+  const response = await client.chat.completions.create({
     model: 'gpt-4o',
     messages: [
       {
@@ -42,7 +54,8 @@ export async function generateStructuredOutput<T>(schema: object, prompt: string
 }
 
 export async function generateEmbeddings(text: string): Promise<number[]> {
-  const response = await openai.embeddings.create({
+  const client = getOpenAIClient();
+  const response = await client.embeddings.create({
     model: 'text-embedding-3-small',
     input: text,
   });
@@ -251,7 +264,8 @@ You help freelancers with:
 Be helpful, concise, and professional. Focus on actionable advice.`,
   };
 
-  const response = await openai.chat.completions.create({
+  const client = getOpenAIClient();
+  const response = await client.chat.completions.create({
     model: 'gpt-4o',
     messages: [systemMessage, ...messages],
     temperature: 0.7,
@@ -260,5 +274,3 @@ Be helpful, concise, and professional. Focus on actionable advice.`,
 
   return response.choices[0]?.message?.content || '';
 }
-
-export { openai };
