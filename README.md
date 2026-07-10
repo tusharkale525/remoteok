@@ -80,3 +80,29 @@ Required variables:
 ## License
 
 MIT
+
+## Manual Deployment to Vercel (Already Connected)
+
+Since you've already connected GitHub with Vercel, follow these steps:
+
+1. **Trigger Deployment**:
+   - Go to https://vercel.com/dashboard
+   - Find your `remoteok` project
+   - Click "Deployments"
+   - Click "Create Deployment" or trigger from GitHub by pushing new code
+
+2. **Set Environment Variables**:
+   In Vercel dashboard → Project → Settings → Environment Variables, add:
+   - `NEXT_PUBLIC_SUPABASE_URL` = your_supabase_url
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = your_supabase_anon_key
+   - `SUPABASE_SERVICE_ROLE_KEY` = your_service_role_key
+   - `OPENAI_API_KEY` = your_openai_api_key
+   - `STRIPE_SECRET_KEY` = your_stripe_secret_key
+   - `DATABASE_URL` = your_database_url
+
+3. **Redeploy**:
+   After setting environment variables, go to Deployments and click "..." → "Redeploy"
+
+## Check Deployment Status
+
+Visit: https://vercel.com/dashboard
